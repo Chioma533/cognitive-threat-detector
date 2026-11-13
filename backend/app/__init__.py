@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 
-from flask import Flask
-from flask import jsonify
+from flask import Flask, jsonify
+from flask_cors import CORS
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from app.config import Config
@@ -12,9 +12,20 @@ from app.api.batch_assessments import batch_assessments_blueprint
 
 def create_app(config_overrides: Mapping[str, object] | None = None) -> Flask:
     app = Flask(__name__)
+
     app.config.from_object(Config)
     if config_overrides is not None:
         app.config.update(config_overrides)
+
+    CORS(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": ["https://ct-detector.vercel.app"]
+            }
+        },
+    )
+
     app.config["MAX_CONTENT_LENGTH"] = 11 * 1024 * 1024
 
     orchestrator = app.config.get("ASSESSMENT_ORCHESTRATOR")
@@ -42,4 +53,5 @@ def create_app(config_overrides: Mapping[str, object] | None = None) -> Flask:
 
     app.register_blueprint(assessments_blueprint)
     app.register_blueprint(batch_assessments_blueprint)
+
     return app
